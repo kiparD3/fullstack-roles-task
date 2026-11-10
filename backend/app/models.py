@@ -1,8 +1,17 @@
 import uuid
 from datetime import UTC, datetime
 
-from pydantic import EmailStr
+from pydantic import EmailStr, computed_field
+from sqlalchemy import CheckConstraint, Column, Enum
 from sqlmodel import Field, Relationship, SQLModel
+
+from app.core.authorization import (
+    EffectiveRole,
+    Permission,
+    UserRole,
+    effective_role,
+    permissions_for,
+)
 
 
 def get_datetime_utc() -> datetime:
@@ -14,15 +23,30 @@ class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
+    role: UserRole | None = Field(
+        default=None,
+        sa_column=Column(
+            Enum(
+                UserRole,
+                native_enum=False,
+                values_callable=lambda enum: [role.value for role in enum],
+                length=16,
+            ),
+            nullable=True,
+        ),
+    )
     full_name: str | None = Field(default=None, max_length=255)
 
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
+    role: UserRole | None = UserRole.MEMBER
     password: str = Field(min_length=8, max_length=128)
 
 
 class UserRegister(SQLModel):
+    model_config = SQLModel.model_config.copy()
+    model_config["extra"] = "forbid"
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = Field(default=None, max_length=255)
@@ -33,11 +57,14 @@ class UserUpdate(SQLModel):
     email: EmailStr | None = Field(default=None, max_length=255)
     is_active: bool | None = None
     is_superuser: bool | None = None
+    role: UserRole | None = None
     full_name: str | None = Field(default=None, max_length=255)
     password: str | None = Field(default=None, min_length=8, max_length=128)
 
 
 class UserUpdateMe(SQLModel):
+    model_config = SQLModel.model_config.copy()
+    model_config["extra"] = "forbid"
     full_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
 
@@ -49,6 +76,9 @@ class UpdatePassword(SQLModel):
 
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
+    __table_args__ = (
+        CheckConstraint("role IN ('manager', 'member')", name="ck_user_role"),
+    )
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
@@ -59,6 +89,23 @@ class User(UserBase, table=True):
 class UserPublic(UserBase):
     id: uuid.UUID
     created_at: datetime | None = None
+
+
+class CurrentUserPublic(UserPublic):
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def effective_role(self) -> EffectiveRole:
+        return effective_role(self)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def capabilities(self) -> list[Permission]:
+        return sorted(permissions_for(self))
+
+
+class MetricsPublic(SQLModel):
+    message: str = "Metrics preview"
+    active_projects: int = 0
 
 
 class UsersPublic(SQLModel):
@@ -118,7 +165,7 @@ class Token(SQLModel):
 
 # Contents of JWT token
 class TokenPayload(SQLModel):
-    sub: str | None = None
+    sub: uuid.UUID
 
 
 class NewPassword(SQLModel):
