@@ -1,13 +1,15 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect } from "@tanstack/react-router"
-import { Suspense } from "react"
-
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute } from "@tanstack/react-router"
+import { AxiosError } from "axios"
 import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
+import { Forbidden } from "@/components/Common/Forbidden"
+import { PermissionGuard } from "@/components/Common/PermissionGuard"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
+import { usePermissions } from "@/hooks/usePermissions"
 
 function getUsersQueryOptions() {
   return {
@@ -19,14 +21,6 @@ function getUsersQueryOptions() {
 
 export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
-  beforeLoad: async () => {
-    const { data: user } = await UsersService.readUserMe()
-    if (!user.is_superuser) {
-      throw redirect({
-        to: "/",
-      })
-    }
-  },
   head: () => ({
     meta: [
       {
@@ -38,37 +32,50 @@ export const Route = createFileRoute("/_layout/admin")({
 
 function UsersTableContent() {
   const { user: currentUser } = useAuth()
-  const { data: users } = useSuspenseQuery(getUsersQueryOptions())
+  const { can } = usePermissions()
+  const {
+    data: users,
+    error,
+    isPending,
+  } = useQuery({ ...getUsersQueryOptions(), retry: false })
+  if (isPending) return <PendingUsers />
+  if (error instanceof AxiosError && error.response?.status === 403)
+    return <Forbidden />
+  if (error || !users) return <p role="alert">Unable to load users.</p>
 
   const tableData: UserTableData[] = users.data.map((user: UserPublic) => ({
     ...user,
     isCurrentUser: currentUser?.id === user.id,
   }))
 
-  return <DataTable columns={columns} data={tableData} />
-}
-
-function UsersTable() {
   return (
-    <Suspense fallback={<PendingUsers />}>
-      <UsersTableContent />
-    </Suspense>
+    <DataTable
+      columns={
+        can("users:manage")
+          ? columns
+          : columns.filter((column) => column.id !== "actions")
+      }
+      data={tableData}
+    />
   )
 }
 
 function Admin() {
+  const { can } = usePermissions()
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">
-            Manage user accounts and permissions
-          </p>
+    <PermissionGuard permission="users:read">
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+            <p className="text-muted-foreground">
+              Manage user accounts and permissions
+            </p>
+          </div>
+          {can("users:manage") && <AddUser />}
         </div>
-        <AddUser />
+        <UsersTableContent />
       </div>
-      <UsersTable />
-    </div>
+    </PermissionGuard>
   )
 }
