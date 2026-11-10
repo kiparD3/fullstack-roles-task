@@ -28,6 +28,10 @@ Measured using the existing coverage.py dependency with branch measurement and t
 - Entire backend: 598/642 statements and 85/106 branches executed, or 91.31% combined coverage. This is not a claim of complete unit coverage or exhaustive behavioral correctness.
 - Frontend unit coverage has not been measured. The 78 passing Playwright tests must not be described as unit tests.
 
-## Development checkpoint
+## Development checkpoint and cleanup
 
-This commit restores the temporary seed, its five unit tests, custom local Compose/environment helpers and complete demo instructions. They are explicitly for disposable local development and are removed by the next cleanup commit. The permanent suite has 175 tests; this development checkpoint adds five seed tests. No dependencies changed.
+Commit `8762161` contains the complete temporary development setup: seed module, five seed tests, custom Compose services, environment helper and demo instructions. It was verified with 76 isolated unit tests and an actual fresh migration/bootstrap/seed run: one bootstrap administrator plus four role accounts, with no duplicates when seeded twice.
+
+The following cleanup commit explicitly deletes those five temporary files. Permanent tests and the original template development tooling remain. The disposable database volume and services were removed after verification, deleting all temporary accounts. Checking out a cleanup commit alone cannot delete users from someone else's running database; reviewers using the development checkpoint must run its documented teardown before switching back.
+
+The final application and permanent tests are unchanged from the previously verified version (175 backend tests and 78 Playwright tests). No dependencies changed. The final 71 isolated unit tests were rerun after cleanup.

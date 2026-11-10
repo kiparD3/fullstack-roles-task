@@ -38,7 +38,7 @@ Implement the role-based access task from [evios/Fullstack-Dev-Test-Task](https:
 
 - Review the feature PR; merging is a separate action.
 - Backfill existing users' roles in phase two; phase one deliberately leaves the role column nullable.
-- Complete local disposable database/service teardown and use separate production data and credentials.
+- Local disposable database/service teardown is complete. Use separate production data and credentials.
 - Address the previously identified dependency advisories separately.
 - Metrics remain a labelled stub. Frontend unit-test tooling can be considered in a later phase.
 
