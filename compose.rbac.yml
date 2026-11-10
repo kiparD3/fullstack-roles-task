@@ -1,0 +1,23 @@
+# Isolated local services for RBAC development and testing.
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: rbac-local-only
+      POSTGRES_DB: app
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - rbac-db:/var/lib/postgresql
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "127.0.0.1:11025:1025"
+      - "127.0.0.1:18025:8025"
+volumes:
+  rbac-db:

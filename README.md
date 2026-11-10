@@ -25,7 +25,7 @@ Signup and self-profile schemas reject extra privilege fields. New registrations
 
 ## Setup and tests
 
-Use the original template's [development instructions](development.md) and committed lockfiles. Configure your own environment values. No demo account seed, custom local Compose stack, or credential-bearing environment helper is included in this feature.
+This development checkpoint includes the temporary seed, isolated Compose services and local environment helper. Follow [DEVELOPMENT_DEMO.md](DEVELOPMENT_DEMO.md) to run the app with admin, manager, member and unassigned users. All supplied credentials are disposable local defaults. The following cleanup commit removes these temporary files; permanent tests and original template tooling remain.
 
 Apply the schema migration through the normal backend prestart flow (`alembic upgrade head`). It adds a nullable role column without assigning roles to existing users. Existing superusers remain administrators and can assign roles through the Admin page.
 

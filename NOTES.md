@@ -28,6 +28,6 @@ Measured using the existing coverage.py dependency with branch measurement and t
 - Entire backend: 598/642 statements and 85/106 branches executed, or 91.31% combined coverage. This is not a claim of complete unit coverage or exhaustive behavioral correctness.
 - Frontend unit coverage has not been measured. The 78 passing Playwright tests must not be described as unit tests.
 
-## Cleanup status
+## Development checkpoint
 
-Temporary demo seeding and its five dedicated tests are excluded from the commits. Custom local Compose/environment helpers and their disposable credentials are also excluded. Permanent test fixtures and the template's original tooling remain. Local database/service teardown is the final cleanup step and will be recorded after verification.
+This commit restores the temporary seed, its five unit tests, custom local Compose/environment helpers and complete demo instructions. They are explicitly for disposable local development and are removed by the next cleanup commit. The permanent suite has 175 tests; this development checkpoint adds five seed tests. No dependencies changed.
