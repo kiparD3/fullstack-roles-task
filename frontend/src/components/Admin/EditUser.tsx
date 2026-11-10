@@ -41,6 +41,7 @@ const formSchema = z
       .optional()
       .or(z.literal("")),
     confirm_password: z.string().optional(),
+    role: z.enum(["member", "manager"]).nullable(),
     is_superuser: z.boolean().optional(),
     is_active: z.boolean().optional(),
   })
@@ -68,6 +69,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     defaultValues: {
       email: user.email,
       full_name: user.full_name ?? undefined,
+      role: user.role ?? null,
       is_superuser: user.is_superuser,
       is_active: user.is_active,
     },
@@ -84,6 +86,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
     },
   })
 
@@ -186,6 +189,33 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <FormControl>
+                      <select
+                        aria-label="Role"
+                        className="w-full rounded border bg-background p-2"
+                        value={field.value ?? ""}
+                        onChange={(event) =>
+                          field.onChange(event.target.value || null)
+                        }
+                      >
+                        <option value="">Legacy member (unassigned)</option>
+                        <option value="member">Member</option>
+                        <option value="manager">Manager</option>
+                      </select>
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Superusers have admin access regardless of this role.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="is_superuser"

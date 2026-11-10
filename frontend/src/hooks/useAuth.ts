@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router"
 
 import {
   type Body_login_login_access_token as AccessToken,
+  type CurrentUserPublic,
   LoginService,
-  type UserPublic,
   type UserRegister,
   UsersService,
 } from "@/client"
@@ -20,10 +20,16 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user } = useQuery<UserPublic | null, Error>({
+  const {
+    data: user,
+    isPending,
+    isError,
+    refetch,
+  } = useQuery<CurrentUserPublic | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => (await UsersService.readUserMe()).data,
     enabled: isLoggedIn(),
+    retry: false,
   })
 
   const signUpMutation = useMutation({
@@ -42,6 +48,8 @@ const useAuth = () => {
     const response = await LoginService.loginAccessToken({
       body: data,
     })
+    await queryClient.cancelQueries()
+    queryClient.clear()
     localStorage.setItem("access_token", response.data.access_token)
   }
 
@@ -53,8 +61,10 @@ const useAuth = () => {
     onError: handleError.bind(showErrorToast),
   })
 
-  const logout = () => {
+  const logout = async () => {
     localStorage.removeItem("access_token")
+    await queryClient.cancelQueries()
+    queryClient.clear()
     navigate({ to: "/login" })
   }
 
@@ -63,6 +73,9 @@ const useAuth = () => {
     loginMutation,
     logout,
     user,
+    isPending,
+    isError,
+    refetch,
   }
 }
 

@@ -182,7 +182,9 @@ test.describe("Admin user management", () => {
 test.describe("Admin page access control", () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test("Non-superuser cannot access admin page", async ({ page }) => {
+  test("Member sees forbidden when directly opening admin page", async ({
+    page,
+  }) => {
     const email = randomEmail()
     const password = randomPassword()
 
@@ -192,7 +194,10 @@ test.describe("Admin page access control", () => {
     await page.goto("/admin")
 
     await expect(page.getByRole("heading", { name: "Users" })).not.toBeVisible()
-    await expect(page).not.toHaveURL(/\/admin/)
+    await expect(
+      page.getByRole("heading", { name: "Access denied" }),
+    ).toBeVisible()
+    await expect(page).toHaveURL(/\/admin$/)
   })
 
   test("Superuser can access admin page", async ({ page }) => {

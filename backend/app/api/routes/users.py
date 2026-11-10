@@ -9,10 +9,13 @@ from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
+    require_permission,
 )
+from app.core.authorization import Permission
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
+    CurrentUserPublic,
     Item,
     Message,
     UpdatePassword,
@@ -31,7 +34,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_permission(Permission.USERS_READ))],
     response_model=UsersPublic,
 )
 def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
@@ -121,7 +124,7 @@ def update_password_me(
     return Message(message="Password updated successfully")
 
 
-@router.get("/me", response_model=UserPublic)
+@router.get("/me", response_model=CurrentUserPublic)
 def read_user_me(current_user: CurrentUser) -> Any:
     """
     Get current user.

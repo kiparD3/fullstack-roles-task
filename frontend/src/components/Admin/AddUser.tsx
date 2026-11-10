@@ -42,6 +42,7 @@ const formSchema = z
     confirm_password: z
       .string()
       .min(1, { message: "Please confirm your password" }),
+    role: z.enum(["member", "manager"]).nullable(),
     is_superuser: z.boolean(),
     is_active: z.boolean(),
   })
@@ -66,6 +67,7 @@ const AddUser = () => {
       full_name: "",
       password: "",
       confirm_password: "",
+      role: "member",
       is_superuser: false,
       is_active: false,
     },
@@ -184,6 +186,33 @@ const AddUser = () => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <FormControl>
+                      <select
+                        aria-label="Role"
+                        className="w-full rounded border bg-background p-2"
+                        value={field.value ?? ""}
+                        onChange={(event) =>
+                          field.onChange(event.target.value || null)
+                        }
+                      >
+                        <option value="">Legacy member (unassigned)</option>
+                        <option value="member">Member</option>
+                        <option value="manager">Manager</option>
+                      </select>
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Superusers have admin access regardless of this role.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="is_superuser"
